@@ -12,12 +12,18 @@ export class AuthService {
   constructor(private prisma: PrismaService, private jwtService: JwtService) {}
 
   async login(loginDto: LoginDto) {
-    const { phone } = loginDto;
+    const { phone, password } = loginDto;
 
     // Проверка формата номера
     const phoneRegex = /^\+380\d{9}$/;
     if (!phoneRegex.test(phone)) {
       throw new BadRequestException("Неверный формат номера телефона");
+    }
+
+    // Проверка пароля
+    const correctPassword = process.env.APP_PASSWORD || "defaultPassword123";
+    if (password !== correctPassword) {
+      throw new UnauthorizedException("Неверный пароль");
     }
 
     // Проверка наличия номера в базе
