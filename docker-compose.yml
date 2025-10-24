@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: db-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: db-app
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mydb?schema=public
+      PORT: 3005
+      NODE_ENV: production
+      JWT_SECRET: your-super-secret-key-change-in-production
+    ports:
+      - "3005:3005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "npx prisma migrate deploy && npx prisma db execute --file ./prisma/seed.sql --schema ./prisma/schema.prisma || true && node dist/main.js"
+
+volumes:
+  postgres-data:
