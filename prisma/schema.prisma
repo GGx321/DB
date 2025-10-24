@@ -14,8 +14,19 @@ datasource db {
 }
 
 model User {
+  id        Int       @id @default(autoincrement())
+  phone     String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+}
+
+model Message {
   id        Int      @id @default(autoincrement())
-  phone     String   @unique
+  text      String
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  
+  @@index([createdAt])
 }
