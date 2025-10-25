@@ -14,9 +14,11 @@ import { WsJwtGuard } from "./ws-jwt.guard";
 
 @WebSocketGateway({
   cors: {
-    origin: true,
+    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : true,
     credentials: true,
   },
+  transports: ["websocket", "polling"],
+  path: "/socket.io/",
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()

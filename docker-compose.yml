@@ -27,6 +27,7 @@ services:
       NODE_ENV: production
       JWT_SECRET: your-super-secret-key-change-in-production
       APP_PASSWORD: mySecretPassword123
+      CORS_ORIGIN: http://localhost:3000,http://localhost:5173
     ports:
       - "3005:3005"
     depends_on:

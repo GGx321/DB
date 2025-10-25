@@ -6,10 +6,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Enable CORS
+  const allowedOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(",")
+    : true;
+
   app.enableCors({
-    origin: true,
-    methods: "GET,POST,OPTIONS",
+    origin: allowedOrigins,
+    methods: "GET,POST,PUT,DELETE,OPTIONS",
     allowedHeaders: "Content-Type,Authorization",
+    credentials: true,
   });
 
   // Enable validation
