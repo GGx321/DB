@@ -17,12 +17,12 @@ export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
   @Get("messages")
-  async getMessages(@Query("limit") limit?: string) {
-    const messages = await this.chatService.getMessages(
+  async getMessages(@Request() req, @Query("limit") limit?: string) {
+    const result = await this.chatService.getMessages(
+      req.user.phone,
       limit ? parseInt(limit) : 50
     );
-    // Возвращаем в правильном порядке (старые сначала)
-    return messages.reverse();
+    return result;
   }
 
   @Get("messages/after/:lastMessageId")
@@ -45,4 +45,3 @@ export class ChatController {
     return { success: true };
   }
 }
-

@@ -26,15 +26,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   constructor(private chatService: ChatService) {}
 
-  handleConnection(client: Socket) {
+  async handleConnection(client: Socket) {
     console.log(`Client connected: ${client.id}`);
   }
 
-  handleDisconnect(client: Socket) {
+  async handleDisconnect(client: Socket) {
     const phone = this.connectedUsers.get(client.id);
     if (phone) {
       console.log(`User ${phone} disconnected`);
       this.connectedUsers.delete(client.id);
+
+      // Обновляем статус на оффлайн
+      const user = await this.chatService.setUserOnline(phone, false);
+
+      // Отправляем всем что пользователь оффлайн
+      this.server.emit("userStatusChanged", {
+        phone: user.phone,
+        name: user.name,
+        isOnline: false,
+        lastSeen: user.lastSeen,
+      });
     }
   }
 
@@ -47,8 +58,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.connectedUsers.set(client.id, data.phone);
     console.log(`User authenticated: ${data.phone}`);
 
+    // Обновляем статус на онлайн
+    const user = await this.chatService.setUserOnline(data.phone, true);
+
     // Отправляем подтверждение
     client.emit("authenticated", { success: true });
+
+    // Отправляем всем что пользователь онлайн
+    this.server.emit("userStatusChanged", {
+      phone: user.phone,
+      name: user.name,
+      isOnline: true,
+      lastSeen: null,
+    });
   }
 
   @UseGuards(WsJwtGuard)

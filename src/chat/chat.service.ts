@@ -33,8 +33,9 @@ export class ChatService {
     });
   }
 
-  async getMessages(limit: number = 50) {
-    return this.prisma.message.findMany({
+  async getMessages(phone: string, limit: number = 50) {
+    // Получаем сообщения
+    const messages = await this.prisma.message.findMany({
       take: limit,
       orderBy: {
         createdAt: "desc",
@@ -49,6 +50,30 @@ export class ChatService {
         },
       },
     });
+
+    // Определяем собеседника (тот кто не текущий пользователь)
+    const currentUser = await this.prisma.user.findUnique({
+      where: { phone },
+    });
+
+    const otherUser = await this.prisma.user.findFirst({
+      where: {
+        phone: {
+          not: phone,
+        },
+      },
+      select: {
+        phone: true,
+        name: true,
+        isOnline: true,
+        lastSeen: true,
+      },
+    });
+
+    return {
+      messages: messages.reverse(),
+      otherUser: otherUser || null,
+    };
   }
 
   async getMessagesAfter(lastMessageId: number, limit: number = 50) {
@@ -94,5 +119,31 @@ export class ChatService {
     return this.prisma.message.delete({
       where: { id: messageId },
     });
+  }
+
+  // Обновление статуса пользователя
+  async setUserOnline(phone: string, isOnline: boolean) {
+    return this.prisma.user.update({
+      where: { phone },
+      data: {
+        isOnline,
+        lastSeen: new Date(),
+      },
+    });
+  }
+
+  // Получение статуса пользователя
+  async getUserStatus(phone: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { phone },
+      select: {
+        phone: true,
+        name: true,
+        isOnline: true,
+        lastSeen: true,
+      },
+    });
+
+    return user;
   }
 }
