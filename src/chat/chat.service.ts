@@ -26,6 +26,7 @@ export class ChatService {
           select: {
             id: true,
             phone: true,
+            name: true,
           },
         },
       },
@@ -43,6 +44,7 @@ export class ChatService {
           select: {
             id: true,
             phone: true,
+            name: true,
           },
         },
       },
@@ -65,6 +67,7 @@ export class ChatService {
           select: {
             id: true,
             phone: true,
+            name: true,
           },
         },
       },

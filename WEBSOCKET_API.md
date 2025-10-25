@@ -64,6 +64,7 @@ socket.on("newMessage", (message) => {
     id: 1,
     text: "Привет!",
     phone: "+380501234567",
+    name: "Александр",
     createdAt: "2024-10-24T12:00:00.000Z"
   }
   */
@@ -130,7 +131,8 @@ async function getMessages(limit = 50) {
     "createdAt": "2024-10-24T12:00:00.000Z",
     "user": {
       "id": 1,
-      "phone": "+380501234567"
+      "phone": "+380501234567",
+      "name": "Александр"
     }
   }
 ]
@@ -181,6 +183,7 @@ interface Message {
   id: number;
   text: string;
   phone: string;
+  name: string;
   createdAt: string;
 }
 
@@ -290,6 +293,9 @@ function Chat() {
               msg.phone === userPhone ? "message-sent" : "message-received"
             }
           >
+            <div className="message-header">
+              <strong>{msg.name}</strong>
+            </div>
             <p>{msg.text}</p>
             <span>{new Date(msg.createdAt).toLocaleTimeString()}</span>
           </div>
@@ -327,11 +333,11 @@ export default Chat;
 
 ### События от сервера (on):
 
-| Событие         | Данные                           | Описание                     |
-| --------------- | -------------------------------- | ---------------------------- |
-| `authenticated` | `{ success: boolean }`           | Подтверждение аутентификации |
-| `newMessage`    | `{ id, text, phone, createdAt }` | Новое сообщение в чате       |
-| `userTyping`    | `{ phone, isTyping }`            | Другой пользователь печатает |
+| Событие         | Данные                                 | Описание                     |
+| --------------- | -------------------------------------- | ---------------------------- |
+| `authenticated` | `{ success: boolean }`                 | Подтверждение аутентификации |
+| `newMessage`    | `{ id, text, phone, name, createdAt }` | Новое сообщение в чате       |
+| `userTyping`    | `{ phone, isTyping }`                  | Другой пользователь печатает |
 
 ## 🚀 Production настройки
 

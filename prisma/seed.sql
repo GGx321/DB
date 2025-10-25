@@ -1,6 +1,6 @@
--- Seed data: добавляем тестовые номера телефонов
-INSERT INTO "User" (phone, "createdAt", "updatedAt") VALUES 
-  ('+380664544255', NOW(), NOW()),
-  ('+380734365811', NOW(), NOW())
+-- Seed data: добавляем тестовые номера телефонов с именами
+INSERT INTO "User" (phone, name, "createdAt", "updatedAt") VALUES 
+  ('+380501234567', 'Машка', NOW(), NOW()),
+  ('+380671234567', 'Сашка', NOW(), NOW()),
 ON CONFLICT (phone) DO NOTHING;
 

@@ -46,7 +46,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     this.connectedUsers.set(client.id, data.phone);
     console.log(`User authenticated: ${data.phone}`);
-    
+
     // Отправляем подтверждение
     client.emit("authenticated", { success: true });
   }
@@ -67,6 +67,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       id: message.id,
       text: message.text,
       phone: message.user.phone,
+      name: message.user.name,
       createdAt: message.createdAt,
     });
 
@@ -86,4 +87,3 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 }
-
