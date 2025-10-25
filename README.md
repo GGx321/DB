@@ -556,7 +556,9 @@ docker-compose logs -f postgres
 - **[WEBSOCKET_API.md](./WEBSOCKET_API.md)** - WebSocket API для чата
 - **[USER_STATUS_API.md](./USER_STATUS_API.md)** - Статусы онлайн/оффлайн
 - **[PUSH_SETUP.md](./PUSH_SETUP.md)** - Настройка push-уведомлений
+- **[IOS_PWA_PUSH_LIMITATIONS.md](./IOS_PWA_PUSH_LIMITATIONS.md)** - 📱 Ограничения iOS PWA и решения
 - **[PRODUCTION_WEBSOCKET.md](./PRODUCTION_WEBSOCKET.md)** - WebSocket на production (iOS/Android)
+- **[MIGRATION_FIX.md](./MIGRATION_FIX.md)** - Исправление ошибок миграций
 - **[AUTH_UPDATE.md](./AUTH_UPDATE.md)** - Документация авторизации
 - **[RENDER_DEPLOY.md](./RENDER_DEPLOY.md)** - Деплой на Render
 
