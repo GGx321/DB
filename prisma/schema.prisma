@@ -14,14 +14,15 @@ datasource db {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  phone     String    @unique
-  name      String
-  isOnline  Boolean   @default(false)
-  lastSeen  DateTime  @default(now())
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  messages  Message[]
+  id               Int       @id @default(autoincrement())
+  phone            String    @unique
+  name             String
+  isOnline         Boolean   @default(false)
+  lastSeen         DateTime  @default(now())
+  pushSubscription String?   @db.Text
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  messages         Message[]
 }
 
 model Message {

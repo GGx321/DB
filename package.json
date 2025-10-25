@@ -14,7 +14,8 @@
     "prisma:studio": "prisma studio",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f app"
+    "docker:logs": "docker-compose logs -f app",
+    "generate-vapid": "node generate-vapid-keys.js"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -43,7 +44,8 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "socket.io": "^4.8.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@nestjs/schematics": "^11.0.9",

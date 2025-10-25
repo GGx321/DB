@@ -12,8 +12,11 @@ REST API на NestJS с JWT авторизацией по номеру теле�
 
 ## Особенности
 
-- ✅ Авторизация только по номеру телефона (формат: `+380XXXXXXXXX`)
+- ✅ Авторизация по номеру телефона + пароль (формат: `+380XXXXXXXXX`)
 - ✅ JWT токены с временем жизни 1 час
+- ✅ WebSocket чат для реального времени
+- ✅ Push-уведомления (Web Push API)
+- ✅ Статус онлайн/оффлайн пользователей
 - ✅ Список разрешенных номеров хранится в БД
 - ✅ Регистрация новых пользователей не предусмотрена
 - ✅ CORS настроен для работы с фронтендом
@@ -32,20 +35,33 @@ DB/
 │   │   ├── auth.module.ts       # Модуль
 │   │   ├── jwt.strategy.ts      # JWT стратегия
 │   │   └── jwt-auth.guard.ts    # Guard для защиты эндпоинтов
+│   ├── chat/                    # Модуль чата
+│   │   ├── chat.gateway.ts      # WebSocket Gateway
+│   │   ├── chat.service.ts      # Логика чата
+│   │   ├── chat.controller.ts   # REST API для истории сообщений
+│   │   ├── chat.module.ts       # Модуль
+│   │   └── ws-jwt.guard.ts      # WebSocket JWT Guard
+│   ├── push/                    # Модуль push-уведомлений
+│   │   ├── push.service.ts      # Логика отправки push
+│   │   ├── push.controller.ts   # API endpoints
+│   │   └── push.module.ts       # Модуль
 │   ├── prisma.service.ts        # Prisma сервис
 │   ├── app.module.ts            # Корневой модуль
 │   └── main.ts                  # Точка входа
 ├── prisma/
-│   ├── schema.prisma            # Схема БД (User модель)
+│   ├── schema.prisma            # Схема БД (User, Message модели)
 │   ├── seed.sql                 # Тестовые данные
 │   └── migrations/              # Миграции
+├── generate-vapid-keys.js       # Генерация VAPID ключей
 ├── Dockerfile                   # Docker образ
 └── docker-compose.yml           # Docker Compose
 ```
 
 ## API Endpoints
 
-### 1. POST /login
+### 📝 Авторизация
+
+#### 1. POST /login
 
 Проверка номера телефона и выдача JWT токена.
 
@@ -61,7 +77,8 @@ curl -X POST http://localhost:3000/login \
 
 ```json
 {
-  "phone": "+380501234567"
+  "phone": "+380501234567",
+  "password": "mySecretPassword123"
 }
 ```
 
@@ -93,7 +110,7 @@ curl -X POST http://localhost:3000/login \
 
 ---
 
-### 2. GET /check
+#### 2. GET /check
 
 Проверка валидности JWT токена.
 
@@ -120,6 +137,91 @@ curl http://localhost:3000/check \
   "statusCode": 401
 }
 ```
+
+---
+
+### 💬 Чат (WebSocket + REST)
+
+Подробная документация:
+
+- **WebSocket API**: см. [WEBSOCKET_API.md](./WEBSOCKET_API.md)
+- **Статусы пользователей**: см. [USER_STATUS_API.md](./USER_STATUS_API.md)
+
+#### 3. GET /chat/messages
+
+Получение истории сообщений + статус собеседника.
+
+**Headers:**
+
+```
+Authorization: Bearer <token>
+```
+
+**Response:**
+
+```json
+{
+  "messages": [
+    {
+      "id": 1,
+      "text": "Привет!",
+      "userId": 1,
+      "createdAt": "2024-10-24T12:00:00.000Z",
+      "user": {
+        "id": 1,
+        "phone": "+380501234567",
+        "name": "Александр"
+      }
+    }
+  ],
+  "otherUser": {
+    "phone": "+380671234567",
+    "name": "Мария",
+    "isOnline": true,
+    "lastSeen": "2024-10-24T12:00:00.000Z"
+  }
+}
+```
+
+#### 4. DELETE /chat/messages/:id
+
+Удаление своего сообщения.
+
+---
+
+### 🔔 Push-уведомления
+
+Подробная документация: см. [PUSH_SETUP.md](./PUSH_SETUP.md)
+
+#### 5. POST /push/subscribe
+
+Сохранение push-подписки пользователя.
+
+**Headers:**
+
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "endpoint": "https://fcm.googleapis.com/...",
+  "expirationTime": null,
+  "keys": {
+    "p256dh": "...",
+    "auth": "..."
+  }
+}
+```
+
+#### 6. DELETE /push/unsubscribe
+
+Удаление push-подписки.
+
+---
 
 ## Быстрый старт
 
@@ -156,30 +258,46 @@ curl http://localhost:3000/check \
 
    ```env
    DATABASE_URL="postgresql://postgres:postgres@localhost:5432/mydb?schema=public"
-   PORT=3000
+   PORT=3005
    NODE_ENV=development
    JWT_SECRET=your-super-secret-key-change-in-production
+   APP_PASSWORD=mySecretPassword123
+   CORS_ORIGIN=http://localhost:3000,http://localhost:5173
    ```
 
-3. **Запустите PostgreSQL:**
+3. **Сгенерируйте VAPID ключи для push-уведомлений:**
+
+   ```bash
+   npm run generate-vapid
+   ```
+
+   Скопируйте полученные ключи в `.env`:
+
+   ```env
+   VAPID_PUBLIC_KEY=ваш_публичный_ключ
+   VAPID_PRIVATE_KEY=ваш_приватный_ключ
+   VAPID_EMAIL=mailto:your-email@example.com
+   ```
+
+4. **Запустите PostgreSQL:**
 
    ```bash
    docker run --name postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=mydb -p 5432:5432 -d postgres:16-alpine
    ```
 
-4. **Примените миграции:**
+5. **Примените миграции:**
 
    ```bash
    npx prisma migrate dev
    ```
 
-5. **Добавьте тестовые номера (опционально):**
+6. **Добавьте тестовые номера (опционально):**
 
    ```bash
    npx prisma db execute --file ./prisma/seed.sql
    ```
 
-6. **Запустите приложение:**
+7. **Запустите приложение:**
    ```bash
    npm run start:dev
    ```
@@ -189,9 +307,9 @@ curl http://localhost:3000/check \
 ### Успешный логин
 
 ```bash
-curl -X POST http://localhost:3000/login \
+curl -X POST http://localhost:3005/login \
   -H "Content-Type: application/json" \
-  -d '{"phone":"+380501234567"}'
+  -d '{"phone":"+380501234567","password":"mySecretPassword123"}'
 ```
 
 ### Проверка токена
@@ -200,17 +318,25 @@ curl -X POST http://localhost:3000/login \
 # Сохраните токен из предыдущего ответа
 TOKEN="eyJhbGc..."
 
-curl http://localhost:3000/check \
+curl http://localhost:3005/check \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-### Тестовые номера
+### Получение истории сообщений
 
-По умолчанию в базе есть 3 тестовых номера:
+```bash
+curl http://localhost:3005/chat/messages \
+  -H "Authorization: Bearer $TOKEN"
+```
 
-- `+380501234567`
-- `+380671234567`
-- `+380931234567`
+### Тестовые данные
+
+**Тестовые пользователи:**
+
+- `+380501234567` - Сашка
+- `+380671234567` - Машка
+
+**Пароль для всех:** `mySecretPassword123` (настраивается через `APP_PASSWORD` в `.env`)
 
 ## Формат номера телефона
 
@@ -267,6 +393,10 @@ docker exec -it db-postgres psql -U postgres -d mydb -c 'SELECT * FROM "User";'
 - `npx prisma generate` - сгенерировать Prisma Client
 - `npx prisma db execute --file ./prisma/seed.sql` - выполнить SQL скрипт
 
+### Push-уведомления
+
+- `npm run generate-vapid` - сгенерировать VAPID ключи
+
 ### Docker
 
 - `docker-compose up -d` - запуск контейнеров
@@ -277,14 +407,29 @@ docker exec -it db-postgres psql -U postgres -d mydb -c 'SELECT * FROM "User";'
 
 ## База данных
 
-### Модель User
+### Модели
 
 ```prisma
 model User {
+  id               Int       @id @default(autoincrement())
+  phone            String    @unique
+  name             String
+  isOnline         Boolean   @default(false)
+  lastSeen         DateTime  @default(now())
+  pushSubscription String?   @db.Text
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  messages         Message[]
+}
+
+model Message {
   id        Int      @id @default(autoincrement())
-  phone     String   @unique
+  text      String
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
 }
 ```
 
@@ -320,11 +465,20 @@ model User {
 DATABASE_URL="postgresql://user:pass@host:port/db?schema=public"
 
 # Приложение
-PORT=3000
+PORT=3005
 NODE_ENV=development
 
-# JWT
+# Авторизация
 JWT_SECRET=your-super-secret-key-change-in-production
+APP_PASSWORD=mySecretPassword123
+
+# CORS (для production укажите конкретные домены)
+CORS_ORIGIN=http://localhost:3000,http://localhost:5173
+
+# Push-уведомления (сгенерируйте: npm run generate-vapid)
+VAPID_PUBLIC_KEY=ваш_публичный_ключ
+VAPID_PRIVATE_KEY=ваш_приватный_ключ
+VAPID_EMAIL=mailto:your-email@example.com
 ```
 
 ## Troubleshooting
@@ -347,7 +501,13 @@ JWT_SECRET=your-super-secret-key-change-in-production
 **Порт занят:**
 
 - Измените PORT в .env
-- Или остановите процесс на порту 3000
+- Или остановите процесс на порту 3005
+
+**Push-уведомления не работают:**
+
+- Убедитесь что VAPID ключи настроены
+- Проверьте логи: должно быть "VAPID keys configured"
+- Смотрите подробную документацию: [PUSH_SETUP.md](./PUSH_SETUP.md)
 
 ## Расширение функционала
 
@@ -375,7 +535,7 @@ async getProfile(@Request() req) {
 
 ```bash
 # Проверка что приложение отвечает
-curl http://localhost:3000/check -I
+curl http://localhost:3005/check -I
 ```
 
 ### Логи
@@ -390,6 +550,15 @@ docker-compose logs -f app
 # Только БД
 docker-compose logs -f postgres
 ```
+
+## 📚 Дополнительная документация
+
+- **[WEBSOCKET_API.md](./WEBSOCKET_API.md)** - WebSocket API для чата
+- **[USER_STATUS_API.md](./USER_STATUS_API.md)** - Статусы онлайн/оффлайн
+- **[PUSH_SETUP.md](./PUSH_SETUP.md)** - Настройка push-уведомлений
+- **[PRODUCTION_WEBSOCKET.md](./PRODUCTION_WEBSOCKET.md)** - WebSocket на production (iOS/Android)
+- **[AUTH_UPDATE.md](./AUTH_UPDATE.md)** - Документация авторизации
+- **[RENDER_DEPLOY.md](./RENDER_DEPLOY.md)** - Деплой на Render
 
 ## Лицензия
 

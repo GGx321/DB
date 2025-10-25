@@ -4,6 +4,7 @@ import { ChatGateway } from "./chat.gateway";
 import { ChatService } from "./chat.service";
 import { ChatController } from "./chat.controller";
 import { PrismaService } from "../prisma.service";
+import { PushModule } from "../push/push.module";
 
 @Module({
   imports: [
@@ -11,9 +12,9 @@ import { PrismaService } from "../prisma.service";
       secret: process.env.JWT_SECRET || "your-secret-key-change-in-production",
       signOptions: { expiresIn: "1h" },
     }),
+    PushModule,
   ],
   controllers: [ChatController],
   providers: [ChatGateway, ChatService, PrismaService],
 })
 export class ChatModule {}
-

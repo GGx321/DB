@@ -146,4 +146,16 @@ export class ChatService {
 
     return user;
   }
+
+  // Получение всех пользователей (для определения получателя)
+  async getAllUsers() {
+    return this.prisma.user.findMany({
+      select: {
+        id: true,
+        phone: true,
+        name: true,
+        isOnline: true,
+      },
+    });
+  }
 }

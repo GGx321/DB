@@ -11,6 +11,7 @@ import { Server, Socket } from "socket.io";
 import { UseGuards } from "@nestjs/common";
 import { ChatService } from "./chat.service";
 import { WsJwtGuard } from "./ws-jwt.guard";
+import { PushService } from "../push/push.service";
 
 @WebSocketGateway({
   cors: {
@@ -26,7 +27,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private connectedUsers = new Map<string, string>(); // socketId -> phone
 
-  constructor(private chatService: ChatService) {}
+  constructor(
+    private chatService: ChatService,
+    private pushService: PushService
+  ) {}
 
   async handleConnection(client: Socket) {
     console.log(`Client connected: ${client.id}`);
@@ -94,6 +98,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       name: message.user.name,
       createdAt: message.createdAt,
     });
+
+    // Отправляем push-уведомление получателю (если он оффлайн)
+    const allUsers = await this.chatService.getAllUsers();
+    const recipient = allUsers.find((u) => u.phone !== phone);
+
+    if (recipient) {
+      await this.pushService.sendPushNotification(recipient.phone, {
+        title: `Новое сообщение от ${message.user.name}`,
+        body: text.substring(0, 100),
+        data: {
+          messageId: message.id,
+          senderPhone: phone,
+          senderName: message.user.name,
+        },
+      });
+    }
 
     return { success: true };
   }
