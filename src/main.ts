@@ -19,12 +19,12 @@ const PUBLIC_CERTIFICATE_PATH = process.env.SSL_PUBLIC_CERTIFICATE;
 
 async function bootstrap() {
   const options: NestApplicationOptions = {};
-  // if (fileExists(PRIVATE_KEY_PATH) && fileExists(PUBLIC_CERTIFICATE_PATH)) {
-  //   options.httpsOptions = {
-  //     key: fs.readFileSync(PRIVATE_KEY_PATH),
-  //     cert: fs.readFileSync(PUBLIC_CERTIFICATE_PATH),
-  //   };
-  // }
+  if (fileExists(PRIVATE_KEY_PATH) && fileExists(PUBLIC_CERTIFICATE_PATH)) {
+    options.httpsOptions = {
+      key: fs.readFileSync(PRIVATE_KEY_PATH),
+      cert: fs.readFileSync(PUBLIC_CERTIFICATE_PATH),
+    };
+  }
   const app = await NestFactory.create(AppModule);
   // Enable CORS
   const allowedOrigins = process.env.CORS_ORIGIN
