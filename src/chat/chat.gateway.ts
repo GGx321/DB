@@ -13,7 +13,7 @@ import { ChatService } from "./chat.service";
 import { WsJwtGuard } from "./ws-jwt.guard";
 import { PushService } from "../push/push.service";
 
-@WebSocketGateway({
+@WebSocketGateway(3001, {
   cors: {
     origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : true,
     credentials: true,
@@ -52,6 +52,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         isOnline: false,
         lastSeen: user.lastSeen,
       });
+    } else {
+      console.warn(`User ${client.id} not found in connectedUsers`);
     }
   }
 
@@ -62,13 +64,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { phone: string }
   ) {
     this.connectedUsers.set(client.id, data.phone);
-    console.log(`User authenticated: ${data.phone}`);
+    console.log(`User authenticating: ${data.phone}`);
 
     // Обновляем статус на онлайн
     const user = await this.chatService.setUserOnline(data.phone, true);
+    console.log(`User set online: ${user.phone}`);
 
     // Отправляем подтверждение
     client.emit("authenticated", { success: true });
+    console.log(`Confirmation sent: ${client.id}`);
 
     // Отправляем всем что пользователь онлайн
     this.server.emit("userStatusChanged", {
