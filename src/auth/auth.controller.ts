@@ -24,4 +24,9 @@ export class AuthController {
   async check(@Request() req) {
     return { phone: req.user.phone };
   }
+
+  @Get("health")
+  async health() {
+    return { status: "ok" };
+  }
 }
