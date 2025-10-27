@@ -13,7 +13,7 @@ import { ChatService } from "./chat.service";
 import { WsJwtGuard } from "./ws-jwt.guard";
 import { PushService } from "../push/push.service";
 
-@WebSocketGateway(3000, {
+@WebSocketGateway({
   cors: {
     origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : true,
     credentials: true,
