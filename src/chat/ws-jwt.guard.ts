@@ -15,10 +15,7 @@ export class WsJwtGuard implements CanActivate {
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret:
-          process.env.JWT_SECRET || "your-secret-key-change-in-production",
-      });
+      const payload = await this.jwtService.verifyAsync(token);
       console.log("payload verified successfully", payload);
       // Добавляем payload в данные сокета
       client.data.user = payload;

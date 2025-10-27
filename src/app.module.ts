@@ -3,12 +3,14 @@ import { AuthModule } from "./auth/auth.module";
 import { ChatModule } from "./chat/chat.module";
 import { PushModule } from "./push/push.module";
 import { ConfigModule } from "@nestjs/config";
+import authConfig from "./config/auth";
+
 @Module({
   imports: [
     AuthModule,
     ChatModule,
     PushModule,
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: ".env" }),
+    ConfigModule.forRoot({ load: [authConfig] }),
   ],
 })
 export class AppModule {}

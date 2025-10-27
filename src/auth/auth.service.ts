@@ -37,9 +37,7 @@ export class AuthService {
 
     // Создание JWT токена
     const payload = { phone: user.phone };
-    const token = this.jwtService.sign(payload, {
-      expiresIn: "1h",
-    });
+    const token = this.jwtService.sign(payload);
 
     return { token };
   }
