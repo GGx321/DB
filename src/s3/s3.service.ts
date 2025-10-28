@@ -12,6 +12,7 @@ export class S3Service {
   private readonly logger = new Logger(S3Service.name);
   private s3: S3Client;
   private bucket: string;
+  private cloudFrontDomain: string | undefined;
 
   constructor() {
     this.s3 = new S3Client({
@@ -20,11 +21,17 @@ export class S3Service {
     });
 
     this.bucket = process.env.AWS_S3_BUCKET!;
+    this.cloudFrontDomain = process.env.AWS_CLOUDFRONT_DOMAIN;
 
     if (!this.bucket) {
-      this.logger.warn("AWS_S3_BUCKET не настроен! Загрузка аватарок не будет работать.");
+      this.logger.warn(
+        "AWS_S3_BUCKET не настроен! Загрузка аватарок не будет работать."
+      );
     } else {
       this.logger.log(`S3 Service инициализирован. Bucket: ${this.bucket}`);
+      if (this.cloudFrontDomain) {
+        this.logger.log(`CloudFront CDN: ${this.cloudFrontDomain}`);
+      }
     }
   }
 
@@ -34,7 +41,10 @@ export class S3Service {
    * @param file Файл загруженный через Multer
    * @returns Ключ файла в S3
    */
-  async uploadAvatar(userId: number, file: Express.Multer.File): Promise<string> {
+  async uploadAvatar(
+    userId: number,
+    file: Express.Multer.File
+  ): Promise<string> {
     const extension = file.originalname.split(".").pop();
     const key = `avatars/${userId}-${Date.now()}.${extension}`;
 
@@ -86,22 +96,32 @@ export class S3Service {
   /**
    * Генерирует временную ссылку для доступа к файлу (15 минут)
    * @param key Ключ файла в S3
-   * @returns Presigned URL
+   * @returns Presigned URL (через CloudFront если настроен)
    */
   async getSignedUrl(key: string | null): Promise<string | null> {
     if (!key) return null;
 
     try {
+      // Генерируем presigned URL для S3
       const command = new GetObjectCommand({
         Bucket: this.bucket,
         Key: key,
       });
 
       // Ссылка действительна 15 минут
-      const url = await getSignedUrl(this.s3, command, { expiresIn: 900 });
+      let url = await getSignedUrl(this.s3, command, { expiresIn: 900 });
+
+      // Если настроен CloudFront - заменяем S3 хост на CloudFront домен
+      if (this.cloudFrontDomain && url) {
+        // Заменяем S3 URL на CloudFront URL, сохраняя query параметры (подпись)
+        const urlObj = new URL(url);
+        urlObj.hostname = this.cloudFrontDomain;
+        url = urlObj.toString();
+      }
+
       return url;
     } catch (error) {
-      this.logger.error(`Ошибка генерации presigned URL для ${key}: ${error.message}`);
+      this.logger.error(`Ошибка генерации URL для ${key}: ${error.message}`);
       return null;
     }
   }
@@ -111,7 +131,9 @@ export class S3Service {
    * @param keys Массив ключей файлов в S3
    * @returns Объект { key: url }
    */
-  async getSignedUrls(keys: (string | null)[]): Promise<Record<string, string | null>> {
+  async getSignedUrls(
+    keys: (string | null)[]
+  ): Promise<Record<string, string | null>> {
     const urls: Record<string, string | null> = {};
 
     await Promise.all(
@@ -125,4 +147,3 @@ export class S3Service {
     return urls;
   }
 }
-
