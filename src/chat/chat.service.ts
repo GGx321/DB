@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma.service";
+import { S3Service } from "../s3/s3.service";
 
 @Injectable()
 export class ChatService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private s3Service: S3Service) {}
 
   async createMessage(phone: string, text: string) {
     // Находим пользователя
@@ -65,14 +66,25 @@ export class ChatService {
       select: {
         phone: true,
         name: true,
+        avatarKey: true,
         isOnline: true,
         lastSeen: true,
       },
     });
 
+    // Генерируем avatarUrl только для собеседника
+    const otherUserAvatarUrl = otherUser
+      ? await this.s3Service.getSignedUrl(otherUser.avatarKey)
+      : null;
+
     return {
       messages: messages.reverse(),
-      otherUser: otherUser || null,
+      otherUser: otherUser
+        ? {
+            ...otherUser,
+            avatarUrl: otherUserAvatarUrl,
+          }
+        : null,
     };
   }
 
@@ -123,13 +135,27 @@ export class ChatService {
 
   // Обновление статуса пользователя
   async setUserOnline(phone: string, isOnline: boolean) {
-    return this.prisma.user.update({
+    const user = await this.prisma.user.update({
       where: { phone },
       data: {
         isOnline,
         lastSeen: new Date(),
       },
+      select: {
+        phone: true,
+        name: true,
+        avatarKey: true,
+        isOnline: true,
+        lastSeen: true,
+      },
     });
+
+    const avatarUrl = await this.s3Service.getSignedUrl(user.avatarKey);
+
+    return {
+      ...user,
+      avatarUrl,
+    };
   }
 
   // Получение статуса пользователя
@@ -139,12 +165,20 @@ export class ChatService {
       select: {
         phone: true,
         name: true,
+        avatarKey: true,
         isOnline: true,
         lastSeen: true,
       },
     });
 
-    return user;
+    if (!user) return null;
+
+    const avatarUrl = await this.s3Service.getSignedUrl(user.avatarKey);
+
+    return {
+      ...user,
+      avatarUrl,
+    };
   }
 
   // Получение всех пользователей (для определения получателя)

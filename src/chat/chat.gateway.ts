@@ -49,6 +49,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.emit("userStatusChanged", {
         phone: user.phone,
         name: user.name,
+        avatarUrl: user.avatarUrl,
         isOnline: false,
         lastSeen: user.lastSeen,
       });
@@ -78,6 +79,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.emit("userStatusChanged", {
       phone: user.phone,
       name: user.name,
+      avatarUrl: user.avatarUrl,
       isOnline: true,
       lastSeen: null,
     });
