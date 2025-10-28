@@ -15,10 +15,10 @@ import { PushService } from "../push/push.service";
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : true,
+    origin: true, // Разрешаем все origins для WebSocket
     credentials: true,
   },
-  transports: ["websocket", "polling"],
+  transports: ["polling"],
   path: "/socket.io/",
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
